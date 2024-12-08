@@ -7,7 +7,6 @@
         <div class="h1 text-warning mb-0">
           <strong>BIZ<span class="text-dark">NEWS</span></strong>
         </div>
-
         <!-- Optional Ad Space or Placeholder -->
         <div></div>
       </div>
@@ -19,15 +18,18 @@
         <button
           class="navbar-toggler"
           type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
+          @click="toggleNavbar"
           aria-controls="navbarNav"
           aria-expanded="false"
           aria-label="Toggle navigation"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+        <div
+          class="collapse navbar-collapse"
+          :class="{ show: isNavbarOpen }"
+          id="navbarNav"
+        >
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
               <a class="nav-link active text-warning" href="#">Home</a>
@@ -38,29 +40,33 @@
             <li class="nav-item">
               <a class="nav-link text-light" href="#">Single News</a>
             </li>
-            <li class="nav-item dropdown">
+            <li class="nav-item dropdown" v-if="isAdminLoggedIn">
               <a
                 class="nav-link dropdown-toggle text-light"
                 href="#"
-                id="navbarDropdown"
                 role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
+                @click="toggleDropdown"
+                :aria-expanded="isDropdownOpen"
               >
-                Dropdown
+                Manage
               </a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Action</a></li>
-                <li><a class="dropdown-item" href="#">Another action</a></li>
+              <ul
+                class="dropdown-menu"
+                :class="{ show: isDropdownOpen }"
+              >
+              <li><router-link class="dropdown-item" to="/admin/news">Manage News</router-link></li>
+              <li><router-link class="dropdown-item" to="/admin/accounts">Manage Accounts</router-link></li>
+                          
                 <li>
                   <hr class="dropdown-divider" />
                 </li>
-                <li><a class="dropdown-item" href="#">Something else here</a></li>
+                <li><a class="dropdown-item" href="#/analytics">Analytics</a></li>
+                <li><a class="dropdown-item text-danger" @click="logout">Logout</a></li>
               </ul>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link text-light" href="#">Contact</a>
-            </li>
+            </li> -->
           </ul>
           <form class="d-flex">
             <input
@@ -78,8 +84,42 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: "LogoNavbar",
+  data() {
+    return {
+      isNavbarOpen: false,
+      isDropdownOpen: false,
+    };
+  },
+  computed: {
+    isAdminLoggedIn() {
+      return !!localStorage.getItem("adminToken");
+    },
+  },
+  methods: {
+    toggleNavbar() {
+      this.isNavbarOpen = !this.isNavbarOpen;
+    },
+    toggleDropdown() {
+      this.isDropdownOpen = !this.isDropdownOpen;
+    },
+    async handleLogout() {
+      try { 
+        
+        this.hideModal();
+  await axios.post("api/admin/logout");
+  localStorage.removeItem("adminToken");
+  this.$router.push("/admin/login");
+ 
+} catch (error) {
+  console.error(error);
+  alert("An error occurred during logout.");
+}
+
+    },
+  },
 };
 </script>
 
@@ -90,5 +130,19 @@ export default {
 
 .navbar {
   width: 100%; /* Ensure navbar spans the full width */
+}
+
+/* Add transition effects for smooth opening/closing */
+.collapse {
+  transition: height 0.3s ease;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+}
+
+.dropdown-menu.show {
+  display: block;
 }
 </style>

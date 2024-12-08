@@ -1,15 +1,20 @@
 <template>
-  <div class="featured-section container-fluid">
-    <div class="row g-0 align-items-stretch" style="height: 600px;">
-      <!-- Main Image Section with Carousel -->
+  <div class="featured-section container-fluid pb-4 ">
+    <div class="row g-0 align-items-stretch" >
+      <!-- Main Carousel Section -->
       <div class="col-lg-8 h-100">
-        <div id="mainCarousel" class="carousel slide h-100" data-bs-ride="carousel">
+        <div
+          v-if="slides.length"
+          id="mainCarousel"
+          class="carousel slide h-100"
+          data-bs-ride="carousel"
+        >
           <div class="carousel-inner h-100">
             <div
               v-for="(item, index) in slides"
               :key="index"
               :class="['carousel-item', { active: index === 0 }]"
-              class="h-100"
+              class="carousel-card-fixed-height"
             >
               <div class="card bg-dark text-white border-0 position-relative h-100">
                 <img
@@ -45,16 +50,23 @@
             <span class="visually-hidden">Next</span>
           </button>
         </div>
+        <div v-else class="d-flex justify-content-center align-items-center h-100">
+          <p class="text-white">No featured content available.</p>
+        </div>
       </div>
 
       <!-- Side Images Section -->
       <div class="col-lg-4 h-100">
         <div class="row g-0 h-100">
-          <div v-for="(side, index) in sideImages" :key="index" class="col-6 col-lg-6 h-50">
-            <div class="card bg-dark text-white border-0 position-relative h-100">
+          <div
+            v-for="(side, index) in sideImages"
+            :key="index"
+            class="col-6 col-lg-6"
+          >
+            <div class="card bg-dark text-white border-0 position-relative card-fixed-height fixed-image-height">
               <img
                 :src="side.image"
-                class="card-img h-100 w-100 no-radius"
+                class="card-img fixed-image-height w-100 no-radius"
                 alt="Side Featured"
               />
               <div class="card-img-overlay d-flex flex-column justify-content-end p-2 gradient-overlay">
@@ -85,7 +97,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from "axios";
 
@@ -93,9 +104,9 @@ export default {
   name: "FeaturedSection",
   data() {
     return {
-      slides: [], // For carousel slides
+      slides: [], // For main carousel slides
       sideImages: [], // For side image cards
-      breakingNews: "", // Breaking news text
+      breakingNews: "", // Breaking news title
     };
   },
   mounted() {
@@ -103,38 +114,52 @@ export default {
   },
   methods: {
     async fetchFeaturedData() {
+      const baseUrl = import.meta.env.VITE_APP_API_URL; // Get base URL from .env
       try {
-        const { data } = await axios.get("/api/news"); // Adjust the endpoint as per your backend
-        // Assuming API returns an array of news articles with attributes: title, content, image, category, date
-        const mainNews = data.slice(0, 3); // First 3 for the carousel
-        const sideNews = data.slice(3, 7); // Next 4 for side images
+        const { data } = await axios.get(`${baseUrl}/api/news`); // Fetch data from backend
 
-        this.slides = mainNews.map((news) => ({
-          image: news.image,
-          category: news.category,
-          title: news.title,
-          date: news.published_at || "Unknown Date",
+        const articles = data.map((item) => ({
+          image: `${baseUrl}/storage/${item.image}`, // Build full image URL
+          category: item.category || "General",
+          title: item.title || "Untitled",
+          date: item.published_at
+            ? new Date(item.published_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              }) // Format date properly
+            : "Unknown Date",
         }));
 
-        this.sideImages = sideNews.map((news) => ({
-          image: news.image,
-          category: news.category,
-          title: news.title,
-          date: news.published_at || "Unknown Date",
-        }));
-
-        this.breakingNews = data[0]?.content.substring(0, 100) || "No breaking news available.";
+        // Assign to sections
+        this.slides = articles.slice(0, 3); // Main carousel
+        this.sideImages = articles.slice(3, 7); // Side images
+        this.breakingNews = articles[0]?.title || "No breaking news available.";
       } catch (error) {
         console.error("Error fetching featured data:", error);
+        this.breakingNews = "Failed to fetch breaking news.";
       }
     },
   },
 };
 </script>
 
-<style scoped>
+
+<style >
+/* Set fixed height for carousel cards */
+.carousel-card-fixed-height {
+  height: 700px; /* Adjust height for consistency */
+}
+
+.card-fixed-height {
+  height: 350px; /* Fixed height for side cards */
+}
+
+.fixed-image-height {
+  object-fit: contain; /* Prevent image distortion */
+}
+
 .card-img {
-  object-fit: cover;
   border-radius: 0 !important;
 }
 
@@ -174,4 +199,6 @@ export default {
 .carousel-control-next-icon {
   filter: invert(1); /* Make controls visible on dark backgrounds */
 }
+
+
 </style>

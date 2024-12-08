@@ -1,20 +1,37 @@
+import { createApp } from "vue";
+import { createPinia } from "pinia";
+
+import App from "./App.vue";
+import router from "./router";
 
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+//lets use cdn
+// Import Bootstrap CSS, JS, and Icons
+// import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/js/bootstrap.bundle.min.js";
+// import "bootstrap-icons/font/bootstrap-icons.css";
 
-import App from './App.vue'
-import router from './router'
-// Import Bootstrap CSS and JS
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import axios from 'axios';
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+import axios from "axios";
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
+// Axios global configuration
+axios.defaults.baseURL = import.meta.env.VITE_APP_API_URL || "http://127.0.0.1:8000";
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("adminToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-const app = createApp(App)
+// Create the Vue application
+const app = createApp(App);
 
-app.use(createPinia())
-app.use(router)
+// Make Axios globally available
+app.config.globalProperties.$axios = axios;
 
-app.mount('#app')
+app.use(createPinia());
+app.use(router);
+app.use(Toast);
+
+app.mount("#app");

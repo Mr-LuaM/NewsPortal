@@ -17,6 +17,7 @@ class News extends Model
         'views',
         'heart_counts',
         'author_id',
+        'is_published',
         'published_at',
     ];
 

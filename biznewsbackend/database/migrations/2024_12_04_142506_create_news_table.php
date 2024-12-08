@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('views')->default(0);
             $table->unsignedBigInteger('heart_counts')->default(0); // New field
             $table->unsignedBigInteger('author_id');
+            $table->tinyInteger('is_published')->default(0);
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
 
