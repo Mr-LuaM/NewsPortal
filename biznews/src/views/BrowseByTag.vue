@@ -2,7 +2,8 @@
     <div id="app">
       <TopHeader />
       <LogoNavbar />
-      <AdminNewsC/>
+      <BrowseByTagC />
+ 
   
     </div>
   </template>
@@ -10,16 +11,14 @@
   <script>
   import TopHeader from "../components/TopHeader.vue";
   import LogoNavbar from "../components/LogoNavbar.vue";
-  import AdminNewsC from "@/components/AdminNewsC.vue";
-
+import BrowseByTagC from "../components/BrowseByTagC.vue";
   
   export default {
-    name: "AdminNews",
+    name: "BrowseByTag",
     components: {
       TopHeader,
       LogoNavbar,
-      AdminNewsC
-
+      BrowseByTagC
     },
   };
   </script>

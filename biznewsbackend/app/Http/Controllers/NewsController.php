@@ -9,13 +9,32 @@ use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $news = News::with(['author', 'tags'])
-            ->where('is_published', true) // Only fetch published news
-            ->get();
+        // Get query parameters
+        $limit = $request->query('limit', 5); // Default limit: 5
+        $sortBy = $request->query('sort_by', 'created_at'); // Default sort by: 'created_at'
+        $order = $request->query('order', 'desc'); // Default order: 'desc'
+        $tag = $request->query('tag', null); // Optional tag filter
+
+        // Fetch news with filters applied
+        $newsQuery = News::with(['author', 'tags'])
+            ->where('is_published', true); // Only fetch published news
+
+        // Apply tag filter if tag is provided
+        if ($tag) {
+            $newsQuery->whereHas('tags', function ($query) use ($tag) {
+                $query->where('name', $tag);
+            });
+        }
+
+        // Apply sorting and limit
+        $news = $newsQuery->orderBy($sortBy, $order)->limit($limit)->get();
+
         return response()->json($news);
     }
+
+
     public function All()
     {
         $news = News::with(['author', 'tags'])
@@ -88,44 +107,39 @@ class NewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'content' => 'required|string',
-            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate file type and size
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'category' => 'nullable|string',
-            'authorId' => 'required|exists:authors,id', // Validate author ID exists
-            'tags' => 'nullable|string',  // Validate tags as a string (comma-separated)
-
+            'authorId' => 'required|exists:authors,id',
+            'tags' => 'nullable|string',
         ]);
 
-        // Handle image upload if a new file is provided
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('images', 'public');
         }
 
-        // Update the news item
         $news->update([
             'title' => $validated['title'],
             'content' => $validated['content'],
-            'image' => $validated['image'] ?? $news->image, // Keep existing image if none is provided
+            'image' => $validated['image'] ?? $news->image,
             'category' => $validated['category'],
             'author_id' => $validated['authorId'],
         ]);
 
-        // Handle tags
         if (!empty($validated['tags'])) {
-            $tagIds = collect($validated['tags'])->map(function ($tagName) {
-                return Tag::firstOrCreate(
-                    ['name' => $tagName],
-                    ['created_at' => now(), 'updated_at' => now()]
-                )->id;
+            $tags = json_decode($validated['tags'], true);
+
+            $tagIds = collect($tags)->map(function ($tag) {
+                return Tag::firstOrCreate(['name' => $tag['name']])->id;
             })->toArray();
 
-            // Sync tags with the news
             $news->tags()->sync($tagIds);
         } else {
-            $news->tags()->detach(); // Remove all tags if none are provided
+            $news->tags()->detach();
         }
 
         return response()->json($news->load('tags', 'author'));
     }
+
 
 
 
@@ -166,5 +180,20 @@ class NewsController extends Controller
             'message' => $news->is_published ? 'News published successfully' : 'News unpublished successfully',
             'news' => $news,
         ]);
+    }
+    public function newsByCategory()
+    {
+        // Group news by category, only fetching published news
+        $news = News::with(['author', 'tags'])
+            ->where('is_published', true)
+            ->get()
+            ->groupBy('category');
+
+        // If no news is found, return an empty object
+        if ($news->isEmpty()) {
+            return response()->json(['message' => 'No news found'], 404);
+        }
+
+        return response()->json($news);
     }
 }

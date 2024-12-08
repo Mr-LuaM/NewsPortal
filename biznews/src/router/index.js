@@ -4,7 +4,8 @@ import AdminLogin from "../views/AdminLogin.vue";
 import AdminNews from "../views/AdminNews.vue";
 import AdminAccounts from "../views/AdminAccounts.vue";
 import NewsArticle  from "../views/NewsArticle.vue";
-
+import NewsCategory from "../views/NewsCategory.vue";
+import BrowseByTag from "../views/BrowseByTag.vue";
 const routes = [
   {
     path: "/",
@@ -17,6 +18,17 @@ const routes = [
     component: NewsArticle,
     props: true, // Pass route params as props to the component
   },
+  {
+    path: "/news/category", // Dynamic route for a specific news article
+    name: "NewsCategory",
+    component: NewsCategory,
+  },
+  {
+    path: "/browse/tag",
+    name: "BrowseByTag",
+    component: BrowseByTag,
+  },
+  
   {
     path: "/admin/login",
     name: "AdminLogin",
@@ -32,10 +44,6 @@ const routes = [
     name: "AdminAccounts",
     component: AdminAccounts,
   },
-
-
-
-
   {
     path: "/:catchAll(.*)",
     redirect: "/admin/login", // Redirect unknown routes to admin login

@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="container mt-4">
+  <div class="mx-5">
+    <div class="container-fluid  mt-4">
       <h2 class="text-warning mb-4">Manage News</h2>
 
       <!-- Add News Button -->
@@ -65,7 +65,7 @@
                 <button class="btn btn-primary btn-sm me-2" @click="openEditModal(news)">
                   <i class="bi bi-pencil-square"></i>
                 </button>
-                <button class="btn btn-warning btn-sm me-2" @click="togglePublish(news)">
+                <button class="btn btn-sm me-2 text-white " :class="news.is_published ? 'bg-success' : 'bg-danger '" @click="togglePublish(news)">
                   <i :class="news.is_published == '1' ? 'bi bi-x-circle bg-red' : 'bi bi-check-circle'"></i>
                 </button>
                 <button class="btn btn-info btn-sm" @click="previewNews(news)">
@@ -90,11 +90,12 @@
             
                 <div class="mb-3">
                   <label for="newTitle" class="form-label">Title</label>
-                  <input type="text" id="newTitle" class="form-control" v-model="newNews.title" />
+                  <input required type="text" id="newTitle" class="form-control" v-model="newNews.title" />
                 </div>
                 <div class="mb-3">
                   <label for="newCategory" class="form-label">Category</label>
                   <input
+                  required
                     type="text"
                     class="form-control"
                     v-model="newNews.category"
@@ -121,7 +122,7 @@
                 <div class="mb-3">
                   <label for="newTags" class="form-label">Tags</label>
                   <div class="input-group">
-                    <input
+                    <input 
                       type="text"
                       class="form-control"
                       v-model="tagInput"
@@ -153,13 +154,24 @@
                 </div>
                 <div class="mb-3">
                   <label for="newImage" class="form-label">Image</label>
-                  <input type="file" class="form-control" id="newImage" @change="onImageChange" />
+                  <input  required type="file" class="form-control" id="newImage" @change="onImageChange" />
                 </div>
                 <div class="mb-3">
                   <label for="newContent" class="form-label">Content</label>
                   <div ref="addQuillEditor" style="height: 300px;"></div>
-                  <input type="hidden" name="quillContent" v-model="newNews.content" />
+                  <input required type="hidden" name="quillContent" v-model="newNews.content" />
+                 <!-- Upload Video Button -->
+                  <button
+                  type="button"
+                  class="btn btn-primary mt-3"
+                  style="position: absolute; bottom: 10px; right: 10px;"
+                  @click="openVideoModal"
+                >
+                  <i class="bi bi-upload"></i> Generate Video Link
+                </button>
+                  
                 </div>
+                
                 <button type="submit" class="btn btn-success" :disabled="loading">
                   <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
                   Add News
@@ -169,6 +181,52 @@
           </div>
         </div>
       </div>
+<!--Upload video modal -->
+<div class="modal fade" id="uploadVideoModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload Video</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form @submit.prevent="uploadVideo">
+          <div class="mb-3">
+            <label for="videoFile" class="form-label">Select Video</label>
+            <input
+            required
+              type="file"
+              id="videoFile"
+              class="form-control"
+              accept="video/*"
+              @change="onVideoFileChange"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary" :disabled="uploadingVideo">
+            <span v-if="uploadingVideo" class="spinner-border spinner-border-sm me-2"></span>
+            Upload
+          </button>
+        </form>
+        <div class="mt-3" v-if="uploadedVideoUrl">
+          <p class="text-success">Video uploaded successfully!</p>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              :value="uploadedVideoUrl"
+              readonly
+              
+            />
+            <button class="btn btn-secondary" @click="copyToClipboard">
+              Copy Link
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
       <!-- Edit News Modal -->
       <div class="modal fade" id="editNewsModal" tabindex="-1" aria-hidden="true">
@@ -212,7 +270,8 @@
                       class="form-control"
                       v-model="tagInput"
                       placeholder="Type and press Enter to add tags"
-                      @keydown.enter.prevent="addTagFromInput"
+                      @keydown.enter.prevent="addTagFromInputForEdit"
+                     
                     />
                   </div>
                   <div class="mt-2">
@@ -222,10 +281,10 @@
                       class="badge bg-primary me-2"
                     >
                       {{ tag.name }}
-                      <i class="bi bi-x-circle ms-1" @click="removeTag(tag)" style="cursor: pointer;"></i>
+                      <i class="bi bi-x-circle ms-1" @click="removeTagForEdit(tag)" style="cursor: pointer;"></i>
                     </span>
                   </div>
-                </div>
+                </div>          
                 <div class="mb-3">
                   <label for="editAuthor" class="form-label">Author</label>
                   <select v-model="currentNews.authorId" class="form-control" required>
@@ -242,12 +301,13 @@
                     class="form-control"
                     id="editImage"
                     @change="onImageChange"
+                 
                   />
                 </div>
                 <div class="mb-3">
                   <label for="editContent" class="form-label">Content</label>
                   <div ref="editQuillEditor" style="height: 300px;"></div>
-                  <input type="hidden" name="quillContent" v-model="currentNews.content" />
+                  <input required type="hidden" name="quillContent" v-model="currentNews.content" />
                 </div>
                 <button type="submit" class="btn btn-primary" :disabled="loading">
                   <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
@@ -331,6 +391,9 @@ export default {
       showAuthorDropdown: false,
       toast : useToast(),
       loading: false, // Tracks loading state for buttons
+      uploadingVideo: false,
+    uploadedVideoUrl: null,
+    selectedVideoFile: null,
     };
   },
   methods: {
@@ -340,6 +403,54 @@ export default {
         this.newsList = response.data;
       });
     },
+    openVideoModal() {
+  this.selectedVideoFile = null; // Reset the selected video file
+  this.uploadedVideoUrl = null; // Clear the previous video URL
+  this.$nextTick(() => {
+    const videoModal = new bootstrap.Modal(document.getElementById("uploadVideoModal"));
+    videoModal.show();
+  });
+},
+
+  onVideoFileChange(event) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedVideoFile = file;
+    }
+  },
+  async uploadVideo() {
+    if (!this.selectedVideoFile) {
+      alert("Please select a video file to upload.");
+      return;
+    }
+
+    this.uploadingVideo = true;
+    const formData = new FormData();
+    formData.append("video", this.selectedVideoFile);
+
+    try {
+      const response = await axios.post("/api/videos/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (response.data.success) {
+        this.uploadedVideoUrl = response.data.url; // The URL returned by the backend
+        this.toast.success("Video uploaded successfully!");
+      } else {
+        this.toast.error("Failed to upload video.");
+      }
+    } catch (error) {
+      this.toast.error("An error occurred while uploading the video.");
+    } finally {
+      this.uploadingVideo = false;
+    }
+  },
+  copyToClipboard() {
+    navigator.clipboard.writeText(this.uploadedVideoUrl).then(() => {
+      this.toast.success("Video URL copied to clipboard!");
+    });
+  },
+
 
     // Open Add News Modal
     openAddNewsModal() {
@@ -364,7 +475,7 @@ export default {
                   [{ list: "ordered" }, { list: "bullet" }],
                   ["bold", "italic", "underline", "strike"],
                   [{ align: [] }],
-                  ["link", "image"],
+                  ["link", "image", "video"],
                 ],
               },
             });
@@ -417,6 +528,7 @@ export default {
     // Open Edit News Modal
     openEditModal(news) {
       this.currentNews = { ...news };
+      this.currentNews.image = null;
       this.$nextTick(() => {
         if (!this.quillEdit) {
           const container = this.$refs.editQuillEditor;
@@ -447,28 +559,35 @@ export default {
 
     // Update News
     async updateNews() {
-      this.loading = true;
-      const formData = new FormData();
-      formData.append("title", this.currentNews.title);
-      formData.append("category", this.currentNews.category);
-      formData.append("content", this.quillEdit.root.innerHTML);
-      formData.append("authorId", this.currentNews.authorId);
-      formData.append("tags", this.currentNews.tags);
-      if (this.currentNews.image) {
-        formData.append("image", this.currentNews.image);
-      }
+  this.loading = true;
 
-      try {
-        await axios.put(`/api/news/${this.currentNews.id}`, formData);
-         this.toast.success("News updated successfully!");
-        this.fetchNews();
-        new bootstrap.Modal(document.getElementById("editNewsModal")).hide();
-      } catch (error) {
-         this.toast.error("Failed to update news.", "danger");
-      } finally {
-        this.loading = false;
-      }
-    },
+  const formData = new FormData();
+  formData.append("title", this.currentNews.title);
+  formData.append("content", this.quillEdit.root.innerHTML);
+  formData.append("authorId", this.currentNews.authorId);
+  formData.append("category", this.currentNews.category || "");
+  formData.append("tags", JSON.stringify(this.currentNews.tags));
+
+  if (this.currentNews.image) {
+    formData.append("image", this.currentNews.image);
+  }
+
+  console.log("FormData content:");
+  formData.forEach((value, key) => console.log(`${key}:`, value));
+
+  try {
+    const response = await axios.post(`/api/news/${this.currentNews.id}`, formData);
+    this.toast.success("News updated successfully!");
+    this.fetchNews();
+    new bootstrap.Modal(document.getElementById("editNewsModal")).hide();
+  } catch (error) {
+    console.error("Error:", error.response?.data || error.message);
+    this.toast.error("Failed to update news.", "danger");
+  } finally {
+    this.loading = false;
+  }
+}
+,
 
     // Toggle Publish Status
     async togglePublish(news) {
@@ -535,7 +654,17 @@ export default {
   this.tagInput = ""; // Clear input
   console.log("Tags being sent:", this.newNews.tags);
 
+},  addTagFromInputForEdit() {
+  const tag = this.tagInput.trim();
+  if (tag && !this.currentNews.tags.some((t) => t.name === tag)) {
+    this.currentNews.tags.push({ name: tag }); // Add new tag as object
+  }
+  this.tagInput = ""; // Clear input
 },
+removeTagForEdit(tag) {
+  this.currentNews.tags = this.currentNews.tags.filter((t) => t.name !== tag.name);
+},
+
 
 removeTag(tag) {
   this.newNews.tags = this.newNews.tags.filter((t) => t !== tag); // Remove tag
@@ -570,7 +699,10 @@ removeTag(tag) {
     this.newAuthor.picture = file;
   }
 },
-
+previewNews(news) {
+    // Redirect to the news preview page
+    this.$router.push({ name: "NewsArticle", params: { id: news.id } });
+  },
     onImageChange(event) {
       if (event.target.files.length > 0) {
         if (this.currentNews) {

@@ -44,6 +44,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import axios from "axios";
 
@@ -61,22 +62,61 @@ export default {
     async fetchFeaturedNews() {
       const baseUrl = import.meta.env.VITE_APP_API_URL; // Base URL from .env
       try {
-        const { data } = await axios.get(`${baseUrl}/api/news`); // Fetch data from backend
-        this.featuredNews = data.map((item) => ({
-          id: item.id, // Add ID for navigation
-          image: `${baseUrl}/storage/${item.image}`, // Build full image URL dynamically
+        const { data } = await axios.get(`${baseUrl}/api/news?limit=15`); // Fetch data from backend with limit=15
+        const today = new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        });
+
+        const articles = data.map((item) => ({
+          id: item.id || "nonews", // Add ID for navigation
+          image: item.image
+            ? `${baseUrl}/storage/${item.image}`
+            : "../src/assets/demo.png", // Default image
           category: item.category || "General",
-          title: item.title || "Untitled",
-          date: new Date(item.published_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "2-digit",
-            year: "numeric",
-          }) || "Unknown Date",
+          title: item.title || "No News",
+          date: item.published_at
+            ? new Date(item.published_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })
+            : today,
         }));
+
+        // Fill in missing items
+        while (articles.length < 5) {
+          articles.push({
+            id: "nonews",
+            image: "../src/assets/demo.png",
+            category: "General",
+            title: "No News",
+            date: today,
+          });
+        }
+
+        this.featuredNews = articles;
       } catch (error) {
         console.error("Error fetching featured news:", error);
-        this.featuredNews = []; // Fallback to an empty array in case of error
-      }
+
+        // Handle fallback if API fails
+        const today = new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        });
+
+        this.featuredNews = Array(5).fill({
+          id: "nonews",
+          image: "../src/assets/demo.png",
+          category: "General",
+          title: "No News",
+          date: today,
+        });
+      }finally{ this.$emit("loaded");}
+     
+
     },
     scrollLeft() {
       const container = this.$refs.newsContainer;
@@ -87,11 +127,16 @@ export default {
       container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
     },
     goToNews(newsId) {
-      this.$router.push(`/news/${newsId}`); // Navigate to the news detail page
+      if (newsId === "nonews") {
+        window.open("https://nonews.org", "_blank"); // Open fallback link
+      } else {
+        this.$router.push(`/news/${newsId}`); // Navigate to the news detail page
+      }
     },
   },
 };
 </script>
+
 <style scoped>
 .card-img {
   object-fit: cover;

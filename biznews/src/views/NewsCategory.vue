@@ -2,7 +2,8 @@
     <div id="app">
       <TopHeader />
       <LogoNavbar />
-      <AdminNewsC/>
+      <NewsCategoryC />
+ 
   
     </div>
   </template>
@@ -10,16 +11,14 @@
   <script>
   import TopHeader from "../components/TopHeader.vue";
   import LogoNavbar from "../components/LogoNavbar.vue";
-  import AdminNewsC from "@/components/AdminNewsC.vue";
-
+import NewsCategoryC from "../components/NewsCategoryC.vue";
   
   export default {
-    name: "AdminNews",
+    name: "NewsCategory",
     components: {
       TopHeader,
       LogoNavbar,
-      AdminNewsC
-
+      NewsCategoryC
     },
   };
   </script>

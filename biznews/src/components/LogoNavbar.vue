@@ -32,44 +32,55 @@
         >
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
-              <a class="nav-link active text-warning" href="#">Home</a>
+              <router-link
+                class="nav-link"
+                :class="{ 'text-warning active': $route.path === '/' }"
+                to="/"
+              >
+                Home
+              </router-link>
             </li>
             <li class="nav-item">
-              <a class="nav-link text-light" href="#">Category</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-light" href="#">Single News</a>
+              <router-link
+                class="nav-link"
+                :class="{ 'text-warning active': $route.path === '/news/category' }"
+                to="/news/category"
+              >
+                Category
+              </router-link>
             </li>
             <li class="nav-item dropdown" v-if="isAdminLoggedIn">
               <a
-                class="nav-link dropdown-toggle text-light"
+                class="nav-link dropdown-toggle"
                 href="#"
+                :class="{ 'text-warning active': $route.path === '/admin/news' }"
                 role="button"
                 @click="toggleDropdown"
                 :aria-expanded="isDropdownOpen"
               >
                 Manage
               </a>
-              <ul
-                class="dropdown-menu"
-                :class="{ show: isDropdownOpen }"
-              >
-              <li><router-link class="dropdown-item" to="/admin/news">Manage News</router-link></li>
-              <li><router-link class="dropdown-item" to="/admin/accounts">Manage Accounts</router-link></li>
-                          
+              <ul class="dropdown-menu" :class="{ show: isDropdownOpen }">
+                <li>
+                  <router-link
+                    class="dropdown-item"
+                    to="/admin/news"
+                  >
+                    Manage News
+                  </router-link>
+                </li>
                 <li>
                   <hr class="dropdown-divider" />
                 </li>
-                <li><a class="dropdown-item" href="#/analytics">Analytics</a></li>
-                <li><a class="dropdown-item text-danger" @click="logout">Logout</a></li>
+                <li>
+                  <a class="dropdown-item text-danger" @click="logout">Logout</a>
+                </li>
               </ul>
             </li>
-            <!-- <li class="nav-item">
-              <a class="nav-link text-light" href="#">Contact</a>
-            </li> -->
           </ul>
-          <form class="d-flex">
+          <form class="d-flex" @submit.prevent="searchByTag">
             <input
+              v-model="searchQuery"
               class="form-control me-2"
               type="search"
               placeholder="Keyword"
@@ -82,15 +93,15 @@
     </nav>
   </div>
 </template>
-
 <script>
-import axios from 'axios';
+import axios from "axios";
 export default {
   name: "LogoNavbar",
   data() {
     return {
       isNavbarOpen: false,
       isDropdownOpen: false,
+      searchQuery: "", // For the search input
     };
   },
   computed: {
@@ -106,23 +117,24 @@ export default {
       this.isDropdownOpen = !this.isDropdownOpen;
     },
     async handleLogout() {
-      try { 
-        
+      try {
         this.hideModal();
-  await axios.post("api/admin/logout");
-  localStorage.removeItem("adminToken");
-  this.$router.push("/admin/login");
- 
-} catch (error) {
-  console.error(error);
-  alert("An error occurred during logout.");
-}
-
+        await axios.post("api/admin/logout");
+        localStorage.removeItem("adminToken");
+        this.$router.push("/admin/login");
+      } catch (error) {
+        console.error(error);
+        alert("An error occurred during logout.");
+      }
+    },
+    searchByTag() {
+      if (this.searchQuery.trim()) {
+        this.$router.push({ path: "/browse/tag", query: { tag: this.searchQuery } });
+      }
     },
   },
 };
 </script>
-
 <style scoped>
 .logo-section {
   font-size: 2rem; /* Matches the size of the logo text */

@@ -30,4 +30,13 @@ class News extends Model
     {
         return $this->belongsToMany(Tag::class, 'news_tag');
     }
+    /**
+     * Helper to group news by category.
+     */
+    // public static function groupByCategory()
+    // {
+    //     return self::published()
+    //         ->get()
+    //         ->groupBy('category');
+    // }
 }
