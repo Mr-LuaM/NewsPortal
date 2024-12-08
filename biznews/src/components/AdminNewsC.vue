@@ -3,79 +3,110 @@
     <div class="container-fluid  mt-4">
       <h2 class="text-warning mb-4">Manage News</h2>
 
-      <!-- Add News Button -->
-      <button class="btn btn-success mb-4" @click="openAddNewsModal">
-        <i class="bi bi-plus-circle"></i> Add News
-      </button>
-
-      <!-- News Table -->
-      <div class="table-responsive">
-        <table id="newsTable" class="table table-bordered table-striped align-middle">
-          <thead class="bg-dark text-light">
-            <tr>
-              <th>#</th>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Author</th>
-              <th>Views</th>
-              <th>Likes</th>
-              <th>Tags</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(news, index) in newsList" :key="news.id">
-              <td>{{ index + 1 }}</td>
-              <td>{{ news.title }}</td>
-              <td>{{ news.category }}</td>
-              <td>
-                <img
-                :src="news.author.profile_picture ? `${baseUrl}/storage/${news.author.profile_picture}` : '/default-avatar.png'"
-                alt="Author"
-                class="rounded-circle me-2"
-                style="width: 30px; height: 30px;"
-              />
-                {{ news.author.name }}
-              </td>
-              <td>{{ news.views }}</td>
-              <td>
-                <i class="bi bi-heart-fill text-danger"></i> {{ news.heart_counts }}
-              </td>
-              <td>
-                <span
-    v-for="tag in news.tags"
-    :key="tag.id"
-    class="badge bg-info text-dark me-1"
-  >
-    {{ tag.name }}
-  </span>
-              </td>
-              <td>
-                <span
-                  class="badge"
-                  :class="news.is_published ? 'bg-success' : 'bg-secondary'"
-                >
-                  {{ news.is_published ? 'Published' : 'Draft' }}
-                </span>
-                
-              </td>
-         
-              <td>
-                <button class="btn btn-primary btn-sm me-2" @click="openEditModal(news)">
-                  <i class="bi bi-pencil-square"></i>
-                </button>
-                <button class="btn btn-sm me-2 text-white " :class="news.is_published ? 'bg-success' : 'bg-danger '" @click="togglePublish(news)">
-                  <i :class="news.is_published == '1' ? 'bi bi-x-circle bg-red' : 'bi bi-check-circle'"></i>
-                </button>
-                <button class="btn btn-info btn-sm" @click="previewNews(news)">
-                  <i class="bi bi-eye"></i> Preview
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <!-- Search and Add News -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <input
+            type="text"
+            v-model="searchQuery"
+            @input="applyFilters"
+            class="form-control w-50"
+            placeholder="Search news..."
+          />
+          <button class="btn btn-success" @click="openAddNewsModal">
+            <i class="bi bi-plus-circle"></i> Add News
+          </button>
+        </div>
+  
+        <!-- News Table -->
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped align-middle">
+            <thead class="bg-dark text-light">
+              <tr>
+                <th @click="sortBy('id')" class="sortable">#</th>
+                <th @click="sortBy('title')" class="sortable">Title</th>
+                <th @click="sortBy('category')" class="sortable">Category</th>
+                <th @click="sortBy('author.name')" class="sortable">Author</th>
+                <th @click="sortBy('views')" class="sortable">Views</th>
+                <th @click="sortBy('heart_counts')" class="sortable">Likes</th>
+                <th>Tags</th>
+                <th @click="sortBy('is_published')" class="sortable">Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(news, index) in paginatedNews" :key="news.id">
+                <td>{{ index + 1 + (currentPage - 1) * itemsPerPage }}</td>
+                <td>{{ news.title }}</td>
+                <td>{{ news.category }}</td>
+                <td>
+                  <img
+                    :src="news.author.profile_picture ? `${baseUrl}/storage/${news.author.profile_picture}` : '/default-avatar.png'"
+                    alt="Author"
+                    class="rounded-circle me-2"
+                    style="width: 30px; height: 30px;"
+                  />
+                  {{ news.author.name }}
+                </td>
+                <td>{{ news.views }}</td>
+                <td>
+                  <i class="bi bi-heart-fill text-danger"></i> {{ news.heart_counts }}
+                </td>
+                <td>
+                  <span
+                    v-for="tag in news.tags"
+                    :key="tag.id"
+                    class="badge bg-info text-dark me-1"
+                  >
+                    {{ tag.name }}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    class="badge"
+                    :class="news.is_published ? 'bg-success' : 'bg-secondary'"
+                  >
+                    {{ news.is_published ? 'Published' : 'Draft' }}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-primary btn-sm me-2" @click="openEditModal(news)">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button
+                    class="btn btn-sm me-2 text-white"
+                    :class="news.is_published ? 'bg-success' : 'bg-danger '"
+                    @click="togglePublish(news)"
+                  >
+                    <i :class="news.is_published == '1' ? 'bi bi-x-circle bg-red' : 'bi bi-check-circle'"></i>
+                  </button>
+                  <button class="btn btn-info btn-sm" @click="previewNews(news)">
+                    <i class="bi bi-eye"></i> Preview
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+  
+        <!-- Pagination Controls -->
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center">
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button class="page-link" @click="goToPage(currentPage - 1)">Previous</button>
+            </li>
+            <li
+              v-for="page in totalPages"
+              :key="page"
+              class="page-item"
+              :class="{ active: page === currentPage }"
+            >
+              <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+            </li>
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button class="page-link" @click="goToPage(currentPage + 1)">Next</button>
+            </li>
+          </ul>
+        </nav>
 
       <!-- Add News Modal -->
       <div class="modal fade" id="addNewsModal" tabindex="-1" aria-hidden="true">
@@ -364,7 +395,12 @@ export default {
       quillEdit: null, // Quill instance for Edit News modal
       newsList: [], 
       baseUrl : import.meta.env.VITE_APP_API_URL,
-
+      filteredNews: [], // Filtered news items
+      searchQuery: "", // Search input value
+      sortKey: "id", // Default sort key
+      sortDirection: "asc", // Default sort direction
+      currentPage: 1, // Current page
+      itemsPerPage: 5, // Items per page
       newNews: {
         title: "",
         category: "",
@@ -395,13 +431,58 @@ export default {
     uploadedVideoUrl: null,
     selectedVideoFile: null,
     };
+  },computed: {
+    totalPages() {
+      return Math.ceil(this.filteredNews.length / this.itemsPerPage);
+    },
+    paginatedNews() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      return this.filteredNews.slice(start, start + this.itemsPerPage);
+    },
   },
   methods: {
     // Fetch all news items
     fetchNews() {
       axios.get("/api/news/all ").then((response) => {
-        this.newsList = response.data;
+        this.newsList = response.data;this.applyFilters();
       });
+    }, applyFilters() {
+      const query = this.searchQuery.toLowerCase();
+      this.filteredNews = this.newsList
+        .filter(
+          (news) =>
+            news.title.toLowerCase().includes(query) ||
+            news.category.toLowerCase().includes(query) ||
+            news.author.name.toLowerCase().includes(query)
+        )
+        .sort((a, b) => {
+          const valueA = this.getNestedValue(a, this.sortKey);
+          const valueB = this.getNestedValue(b, this.sortKey);
+
+          if (this.sortDirection === "asc") {
+            return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+          } else {
+            return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+          }
+        });
+      this.currentPage = 1; // Reset to first page
+    },
+    sortBy(key) {
+      if (this.sortKey === key) {
+        this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        this.sortKey = key;
+        this.sortDirection = "asc";
+      }
+      this.applyFilters();
+    },
+    getNestedValue(object, path) {
+      return path.split(".").reduce((obj, key) => (obj && obj[key] !== undefined ? obj[key] : ""), object);
+    },
+    goToPage(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
     },
     openVideoModal() {
   this.selectedVideoFile = null; // Reset the selected video file
